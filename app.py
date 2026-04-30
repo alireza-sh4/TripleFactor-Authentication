@@ -63,24 +63,24 @@ def init_db():
 
 def get_totp_token(secret, interval):
     #Generates a TOTP token using HMAC-SHA1
-    key = base64.b32decode(secret, casefold=True) #auth had the secret you got it when scanned qr code and now its decoding the secret to not be human readable and perform math
-    msg = struct.pack(">Q", interval) #time since epoch in 30 sec intervals fromatted in 8-byte big-endian integer
-    mac = hmac.new(key, msg, hashlib.sha1).digest() # decoded key , msg throwed in sha1 alogrithm and output is raw bytes of IRREVERSIBLE 20 bytes same as server cuz server has also key , msg
-    offset = mac[-1] & 0x0f # looks at last byte of mac and extract a number 0-15
-    binary = struct.unpack(">I", mac[offset:offset+4])[0] & 0x7fffffff # take 4 bytes from mac starting from offset (0x7fffffff is to remove the sign and return positive) highly randomized large int
-    return str(binary % 1000000).zfill(6) # returns a 6 digit code out of the large int
+    key = base64.b32decode(secret, casefold=True) 
+    msg = struct.pack(">Q", interval)
+    mac = hmac.new(key, msg, hashlib.sha1).digest()
+    offset = mac[-1] & 0x0f
+    binary = struct.unpack(">I", mac[offset:offset+4])[0] & 0x7fffffff
+    return str(binary % 1000000).zfill(6)
 
 def verify_totp(secret, user_code, username):
-    current_interval = int(time.time()) // 30 #. divides current time by 30 to see which 30 sec interval we are in
+    current_interval = int(time.time()) // 30
     
-    for i in range(-1, 2): # checks current, previous and next 30 sec interval ( 30 * -1, 30 * 0, 30 * 1) to compensate for the delay between login request and approval
+    for i in range(-1, 2):
         check_interval = current_interval + i
         expected_code = get_totp_token(secret, check_interval)
         
-        if hmac.compare_digest(expected_code, user_code):  # compares user vs expected codes in constant time (exact 30 sec window e.g -1 interval code x logged in later code x for interval -1 invalid)
+        if hmac.compare_digest(expected_code, user_code):  
             # Replay attack prevention
-            if (username, check_interval) in USED_TOTP_INTERVALS: #user alrady logged in ? (preventing 2 logins at the same time)
-                return False
+            if (username, check_interval) in USED_TOTP_INTERVALS: 
+                
             USED_TOTP_INTERVALS.add((username, check_interval))
             return True
     return False
@@ -120,7 +120,7 @@ def login():
                 session['step'] = 1
                 return redirect('/totp')
             else:
-                # Anti-enumeration timing defense ( it takes time so hacker wont guess username based on response time)
+                # Anti-enumeration timing defense
                 ph.verify(ph.hash("dummy_password"), password)
                 raise VerifyMismatchError()
                 
@@ -128,7 +128,7 @@ def login():
             if user_data:
                 user_data["failed_attempts"] = user_data.get("failed_attempts", 0) + 1
                 if user_data["failed_attempts"] >= 5:
-                    user_data["lockout_until"] = current_time + (15 * 60) # 15 mins
+                    user_data["lockout_until"] = current_time + (15 * 60)
                 save_db(db)
             error = "Invalid credentials."
 
@@ -186,7 +186,7 @@ def totp_step():
         else:
             error = "Invalid or reused TOTP code."
             
-    # Generate URI strictly for UI rendering
+    
     totp_uri = pyotp.totp.TOTP(secret).provisioning_uri(name=username, issuer_name="SecureEdge")
     if error:
         print(f"Error: {error}")
@@ -207,12 +207,12 @@ def telegram_status():
     if not req_id:
         return jsonify({"error": "No pending request"})
         
-    global TELEGRAM_UPDATE_OFFSET # to remember where we left off to only check new messages
+    global TELEGRAM_UPDATE_OFFSET 
     
     # Poll Telegram API for updates
     try:
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getUpdates"
-        resp = requests.get(url, params={"offset": TELEGRAM_UPDATE_OFFSET, "timeout": 2}) #2 sec before reply
+        resp = requests.get(url, params={"offset": TELEGRAM_UPDATE_OFFSET, "timeout": 2})
         if resp.status_code == 200:
             data = resp.json()
             for update in data.get("result", []):
@@ -220,8 +220,8 @@ def telegram_status():
                 
                 if "callback_query" in update:
                     cq = update["callback_query"]
-                    cb_data = cq.get("data", "") # text attached to button
-                    cb_id = cq.get("id") #button id so that we can remove button after clicking
+                    cb_data = cq.get("data", "") 
+                    cb_id = cq.get("id")
                     
                     if cb_data.startswith("approve_"):
                         cid = cb_data.split("approve_")[1]
