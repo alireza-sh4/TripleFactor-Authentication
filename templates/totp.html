@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="step-indicator">
+    <div class="dot done">&#10003;</div>
+    <div class="dot active">2</div>
+    <div class="dot">3</div>
+</div>
+<h2>Authenticator App</h2>
+<p>Scan this QR code with your authenticator app, then enter the 6-digit code below.</p>
+
+<div style="text-align: center; margin-bottom: 15px;">
+    <button type="button" id="toggle-qr" style="background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; padding: 8px 12px; font-size: 12px; margin-bottom: 10px;">Show Barcode (Testing)</button>
+    <div id="qr-container" style="display: none;">
+        <div id="qrcode" style="display: inline-block; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; background: white;"></div>
+        <div style="margin-top: 10px; font-size: 11px; color: #6b7280; font-family: monospace;">Key: {{ secret }}</div>
+    </div>
+</div>
+
+<div class="progress-bar-bg"><div class="progress-bar-fill" id="totp-bar"></div></div>
+
+<form action="/totp" method="POST" id="totp-form">
+    <input type="text" name="code" class="totp-input" maxlength="6" autocomplete="off" autofocus placeholder="------">
+    <button type="submit">Verify Code</button>
+</form>
+
+<script>
+    // QR Code Generation
+    new QRCode(document.getElementById("qrcode"), {
+        text: "{{ totp_uri }}",
+        width: 140, height: 140,
+        colorDark : "#111827", colorLight : "#ffffff"
+    });
+
+    // Toggle QR Code
+    document.getElementById('toggle-qr').addEventListener('click', function() {
+        var container = document.getElementById('qr-container');
+        if(container.style.display === 'none') {
+            container.style.display = 'block';
+            this.innerText = 'Hide Barcode';
+        } else {
+            container.style.display = 'none';
+            this.innerText = 'Show Barcode (Testing)';
+        }
+    });
+
+    // Auto-submit functionality
+    var totpInput = document.querySelector('.totp-input');
+    totpInput.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+        if(this.value.length === 6) {
+            document.getElementById('totp-form').submit();
+        }
+    });
+
+    // Countdown logic
+    setInterval(function() {
+        var seconds = new Date().getSeconds();
+        var remaining = 30 - (seconds % 30);
+        var percentage = (remaining / 30) * 100;
+        
+        var bar = document.getElementById('totp-bar');
+        bar.style.width = percentage + '%';
+        
+        if(remaining <= 5) {
+            bar.style.backgroundColor = '#dc2626'; // Red
+        } else if(remaining <= 10) {
+            bar.style.backgroundColor = '#d97706'; // Orange
+        } else {
+            bar.style.backgroundColor = '#2563eb'; // Blue
+        }
+    }, 1000);
+</script>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="text-align: center; margin-bottom: 20px;">
+    <div style="font-size: 40px; color: #10b981; margin-bottom: 10px;">&#10003;</div>
+    <h2 style="margin: 0;">Access Granted</h2>
+    <p>Welcome to the secure portal, <strong>{{ username }}</strong>.</p>
+</div>
+
+<div style="background: #f9fafb; border: 1px solid #e5e7eb; padding: 15px; border-radius: 6px; margin-bottom: 25px; font-size: 14px;">
+    <div style="margin-bottom: 10px; border-bottom: 1px solid #f3f4f6; padding-bottom: 5px;">Factor 1 (Password): <span class="pass-tag" style="float:right;">PASS</span></div>
+    <div style="margin-bottom: 10px; border-bottom: 1px solid #f3f4f6; padding-bottom: 5px;">Factor 2 (TOTP): <span class="pass-tag" style="float:right;">PASS</span></div>
+    <div>Factor 3 (OOB JWT): <span class="pass-tag" style="float:right;">PASS</span></div>
+</div>
+
+<h3>Recent Logins</h3>
+<ul style="margin-bottom: 25px;">
+    {% for stamp in history %}
+        <li>&#128197; {{ stamp }}</li>
+    {% endfor %}
+</ul>
+
+<form action="/logout" method="GET">
+    <button type="submit" style="background: #f3f4f6; color: #374151; border: 1px solid #d1d5db;">Log Out</button>
+</form>
+{% endblock %}

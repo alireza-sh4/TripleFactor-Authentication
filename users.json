@@ -1,0 +1,10 @@
+{
+    "demo": {
+        "password_hash": "$argon2id$v=19$m=65536,t=2,p=2$DJjX6tLJqoCAclJL5rSwIw$mqpJT4A0AS61kFViFtnVNDaF2aYkF/fbL30aEzaHSNU",
+        "totp_secret": "OT6DNH2JPWWH3PRLH3SZVM6QOFO32IXQ",
+        "logins": [],
+        "failed_attempts": 0,
+        "lockout_until": 0,
+        "login_history": []
+    }
+}
