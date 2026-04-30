@@ -12,6 +12,7 @@ Hi! This is my security project demonstrating a secure login system. It implemen
 ## How to Run
 
 1. Make sure you have Python installed.
+
 2. Install the required libraries:
    ```bash
    pip install -r requirements.txt
@@ -33,5 +34,3 @@ When you run the app for the first time, it creates a demo account automatically
 - Argon2 (for password hashing)
 - Telegram Bot API
 - HTML/CSS (Templates)
-
-Thanks for checking out my project!
