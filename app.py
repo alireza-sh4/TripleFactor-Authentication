@@ -16,7 +16,6 @@ import requests
 app = Flask(__name__)
 app.secret_key = os.urandom(32)
 
-# --- Configuration & Globals ---
 PORT = 5050
 DB_FILE = "users.json"
 JWT_SECRET = "enterprise_jwt_super_secret_778899"
@@ -62,7 +61,6 @@ def init_db():
 
 
 def get_totp_token(secret, interval):
-    #Generates a TOTP token using HMAC-SHA1
     key = base64.b32decode(secret, casefold=True) 
     msg = struct.pack(">Q", interval)
     mac = hmac.new(key, msg, hashlib.sha1).digest()
@@ -85,7 +83,6 @@ def verify_totp(secret, user_code, username):
             return True
     return False
 
-# --- Routes ---
 @app.route('/')
 def index():
     return redirect('/login')
@@ -102,7 +99,7 @@ def login():
         user_data = db.get(username)
         current_time = time.time()
         
-        # Lockout check
+        
         if user_data and user_data.get("lockout_until", 0) > current_time:
             remaining = int((user_data["lockout_until"] - current_time) / 60)
             print(f"Error: Account locked. Try again in {remaining} minutes.")
@@ -120,7 +117,7 @@ def login():
                 session['step'] = 1
                 return redirect('/totp')
             else:
-                # Anti-enumeration timing defense
+                
                 ph.verify(ph.hash("dummy_password"), password)
                 raise VerifyMismatchError()
                 
@@ -134,16 +131,16 @@ def login():
 
     if error:
         print(f"Error: {error}")
-    return render_template('login.html') # redirect to empty login in case of error 
+    return render_template('login.html') 
 
 @app.route('/totp', methods=['GET', 'POST'])
 def totp_step():
-    if session.get('step') != 1: # prevents direct access to totp page without completing login 
+    if session.get('step') != 1: 
         return redirect('/login')
         
     db = load_db()
     username = session['user']
-    secret = db[username]["totp_secret"] #totp secret of the logged in user
+    secret = db[username]["totp_secret"] 
     error = None
     
     if request.method == 'POST':
@@ -160,7 +157,7 @@ def totp_step():
                 keyboard = {
                     "inline_keyboard": [
                         [
-                            {"text": "Approve", "callback_data": f"approve_{login_request_id}"}, # login request id attached to button then when recieved splitted , used
+                            {"text": "Approve", "callback_data": f"approve_{login_request_id}"},
                             {"text": "Deny", "callback_data": f"deny_{login_request_id}"}
                         ]
                     ]
@@ -209,7 +206,7 @@ def telegram_status():
         
     global TELEGRAM_UPDATE_OFFSET 
     
-    # Poll Telegram API for updates
+  
     try:
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getUpdates"
         resp = requests.get(url, params={"offset": TELEGRAM_UPDATE_OFFSET, "timeout": 2})
@@ -238,13 +235,12 @@ def telegram_status():
     except Exception as e:
         print(f"Polling error: {e}")
 
-    # Check status
+   
     status = LOGIN_REQUESTS.get(req_id, "pending")
     if status == "approved":
         session['step'] = 3
         session['auth'] = True
-        
-        # Log history
+       
         db = load_db()
         username = session['user']
         history = db[username].get("login_history", [])
